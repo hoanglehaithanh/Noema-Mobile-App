@@ -1,18 +1,20 @@
 {
-  "onboarding": {
-    "message": "مرحبا بكم في موقع تطبيق obytes"
-  },
   "settings": {
     "about": "حول التطبيق ",
+    "account": "الحساب",
+    "ai": "إعدادات الذكاء الاصطناعي",
     "app_name": "اسم التطبيق",
     "arabic": "عربي",
+    "email": "البريد الإلكتروني",
     "english": "إنجليزي",
+    "gemini_key": "مفتاح Gemini API",
     "generale": "عام",
     "github": "جيثب",
     "language": "لغة",
     "links": "الروابط",
     "logout": "تسجيل خروج",
     "more": "أكثر",
+    "name": "اسم العرض",
     "privacy": "سياسة الخصوصية",
     "rate": "تقييم",
     "share": "شارك",
@@ -29,5 +31,5 @@
     "version": "إصدار",
     "website": "موقع الكتروني"
   },
-  "welcome": "test arabic"
+  "welcome": "مرحبا بكم في نويما"
 }

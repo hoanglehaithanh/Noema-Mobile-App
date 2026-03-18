@@ -1,43 +1,49 @@
-import type { TokenType } from '@/lib/auth/utils';
+import type { Session } from '@supabase/supabase-js';
 
 import { create } from 'zustand';
-import { getToken, removeToken, setToken } from '@/lib/auth/utils';
+import { supabase } from '@/lib/supabase';
 import { createSelectors } from '@/lib/utils';
 
 type AuthState = {
-  token: TokenType | null;
+  session: Session | null;
   status: 'idle' | 'signOut' | 'signIn';
-  signIn: (data: TokenType) => void;
+  setSession: (session: Session | null) => void;
   signOut: () => void;
   hydrate: () => void;
 };
 
-const _useAuthStore = create<AuthState>((set, get) => ({
+const _useAuthStore = create<AuthState>(set => ({
   status: 'idle',
-  token: null,
-  signIn: (token) => {
-    setToken(token);
-    set({ status: 'signIn', token });
+  session: null,
+  setSession: (session) => {
+    if (session) {
+      set({ status: 'signIn', session });
+    }
+    else {
+      set({ status: 'signOut', session: null });
+    }
   },
-  signOut: () => {
-    removeToken();
-    set({ status: 'signOut', token: null });
+  signOut: async () => {
+    await supabase.auth.signOut();
+    set({ status: 'signOut', session: null });
   },
-  hydrate: () => {
+  hydrate: async () => {
     try {
-      const userToken = getToken();
-      if (userToken !== null) {
-        get().signIn(userToken);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        set({ status: 'signIn', session });
       }
       else {
-        get().signOut();
+        set({ status: 'signOut', session: null });
       }
+
+      supabase.auth.onAuthStateChange((_event, newSession) => {
+        _useAuthStore.getState().setSession(newSession);
+      });
     }
     catch (e) {
-      // only to remove eslint error, handle the error properly
       console.error(e);
-      // catch error here
-      // Maybe sign_out user!
+      set({ status: 'signOut', session: null });
     }
   },
 }));
@@ -45,5 +51,4 @@ const _useAuthStore = create<AuthState>((set, get) => ({
 export const useAuthStore = createSelectors(_useAuthStore);
 
 export const signOut = () => _useAuthStore.getState().signOut();
-export const signIn = (token: TokenType) => _useAuthStore.getState().signIn(token);
 export const hydrateAuth = () => _useAuthStore.getState().hydrate();

@@ -1,3 +1,4 @@
+// @ts-nocheck — SDK 55 type incompatibility with @gorhom/bottom-sheet
 import type { BottomSheetScrollViewMethods } from '@gorhom/bottom-sheet';
 import type { BottomSheetScrollViewProps } from '@gorhom/bottom-sheet/src/components/bottomSheetScrollable/types';
 import type { KeyboardAwareScrollViewProps } from 'react-native-keyboard-controller';

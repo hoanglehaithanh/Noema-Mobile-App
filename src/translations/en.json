@@ -1,18 +1,20 @@
 {
-  "onboarding": {
-    "message": "Welcome to obytes app site"
-  },
   "settings": {
     "about": "About",
+    "account": "Account",
+    "ai": "AI Configuration",
     "app_name": "App Name",
     "arabic": "Arabic",
+    "email": "Email",
     "english": "English",
+    "gemini_key": "Gemini API Key",
     "generale": "General",
     "github": "Github",
     "language": "Language",
     "links": "Links",
     "logout": "Logout",
     "more": "More",
+    "name": "Display Name",
     "privacy": "Privacy Policy",
     "rate": "Rate",
     "share": "Share",
@@ -29,5 +31,5 @@
     "version": "Version",
     "website": "Website"
   },
-  "welcome": "Welcome to obytes app site"
+  "welcome": "Welcome to Noema"
 }

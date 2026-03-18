@@ -37,17 +37,17 @@
   --color-neutral-800: #262626;
   --color-neutral-900: #171717;
 
-  /* Primary palette */
-  --color-primary-50: #FFE2CC;
-  --color-primary-100: #FFC499;
-  --color-primary-200: #FFA766;
-  --color-primary-300: #FF984C;
-  --color-primary-400: #FF8933;
-  --color-primary-500: #FF7B1A;
-  --color-primary-600: #FF6C00;
-  --color-primary-700: #E56100;
-  --color-primary-800: #CC5600;
-  --color-primary-900: #B24C00;
+  /* Primary palette — calm teal */
+  --color-primary-50: #F0FDFA;
+  --color-primary-100: #CCFBF1;
+  --color-primary-200: #99F6E4;
+  --color-primary-300: #5EEAD4;
+  --color-primary-400: #2DD4BF;
+  --color-primary-500: #14B8A6;
+  --color-primary-600: #0D9488;
+  --color-primary-700: #0F766E;
+  --color-primary-800: #115E59;
+  --color-primary-900: #134E4A;
 
   /* Success palette */
   --color-success-50: #F0FDF4;
@@ -97,7 +97,7 @@
 
   --color-border: #e5e5e5;
   --color-input: #e5e5e5;
-  --color-ring: #FF6C00;
+  --color-ring: #0D9488;
 
   --color-destructive: #ef4444;
   --color-destructive-foreground: #ffffff;

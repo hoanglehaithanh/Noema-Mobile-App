@@ -8,33 +8,32 @@ import { Button, Input, Text, View } from '@/components/ui';
 import { getFieldError } from '@/components/ui/form-utils';
 
 const schema = z.object({
-  name: z.string().optional(),
   email: z
     .string({
       message: 'Email is required',
     })
     .min(1, 'Email is required')
     .email('Invalid email format'),
-  password: z
-    .string({
-      message: 'Password is required',
-    })
-    .min(1, 'Password is required')
-    .min(6, 'Password must be at least 6 characters'),
 });
 
 export type FormType = z.infer<typeof schema>;
 
 export type LoginFormProps = {
   onSubmit?: (data: FormType) => void;
+  onGoogleSignIn?: () => void;
+  isSuccess?: boolean;
+  isGoogleLoading?: boolean;
 };
 
-export function LoginForm({ onSubmit = () => {} }: LoginFormProps) {
+export function LoginForm({
+  onSubmit = () => {},
+  onGoogleSignIn = () => {},
+  isSuccess = false,
+  isGoogleLoading = false,
+}: LoginFormProps) {
   const form = useForm({
     defaultValues: {
-      name: '',
       email: '',
-      password: '',
     },
 
     validators: {
@@ -55,72 +54,68 @@ export function LoginForm({ onSubmit = () => {} }: LoginFormProps) {
         <View className="items-center justify-center">
           <Text
             testID="form-title"
-            className="pb-6 text-center text-4xl font-bold"
+            className="pb-2 text-center text-4xl font-bold"
           >
-            Sign In
+            Noema
           </Text>
-
-          <Text className="mb-6 max-w-xs text-center text-gray-500">
-            Welcome! 👋 This is a demo login screen! Feel free to use any email
-            and password to sign in and try it out.
+          <Text className="mb-8 text-center text-lg text-muted-foreground">
+            Your personal cognitive assistant
           </Text>
         </View>
 
-        <form.Field
-          name="name"
-          children={field => (
-            <Input
-              testID="name"
-              label="Name"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChangeText={field.handleChange}
-              error={getFieldError(field)}
-            />
-          )}
-        />
+        {isSuccess
+          ? (
+              <View className="items-center rounded-xl bg-primary-50 p-6 dark:bg-primary-900">
+                <Text className="text-center text-lg font-semibold text-primary-700 dark:text-primary-200">
+                  Check your email
+                </Text>
+                <Text className="mt-2 text-center text-muted-foreground">
+                  We sent a magic link to your inbox. Tap it to sign in.
+                </Text>
+              </View>
+            )
+          : (
+              <>
+                <form.Field
+                  name="email"
+                  children={field => (
+                    <Input
+                      testID="email-input"
+                      label="Email"
+                      placeholder="you@example.com"
+                      autoCapitalize="none"
+                      autoComplete="email"
+                      keyboardType="email-address"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChangeText={field.handleChange}
+                      error={getFieldError(field)}
+                    />
+                  )}
+                />
 
-        <form.Field
-          name="email"
-          children={field => (
-            <Input
-              testID="email-input"
-              label="Email"
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChangeText={field.handleChange}
-              error={getFieldError(field)}
-            />
-          )}
-        />
-
-        <form.Field
-          name="password"
-          children={field => (
-            <Input
-              testID="password-input"
-              label="Password"
-              placeholder="***"
-              secureTextEntry={true}
-              value={field.state.value}
-              onBlur={field.handleBlur}
-              onChangeText={field.handleChange}
-              error={getFieldError(field)}
-            />
-          )}
-        />
-
-        <form.Subscribe
-          selector={state => [state.isSubmitting]}
-          children={([isSubmitting]) => (
-            <Button
-              testID="login-button"
-              label="Login"
-              onPress={form.handleSubmit}
-              loading={isSubmitting}
-            />
-          )}
-        />
+                <form.Subscribe
+                  selector={state => [state.isSubmitting]}
+                  children={([isSubmitting]) => (
+                    <View className="gap-3">
+                      <Button
+                        testID="login-button"
+                        label="Send magic link"
+                        onPress={form.handleSubmit}
+                        loading={isSubmitting}
+                      />
+                      <Button
+                        testID="google-login-button"
+                        label="Continue with Google"
+                        variant="outline"
+                        onPress={onGoogleSignIn}
+                        loading={isGoogleLoading}
+                      />
+                    </View>
+                  )}
+                />
+              </>
+            )}
       </View>
     </KeyboardAvoidingView>
   );
