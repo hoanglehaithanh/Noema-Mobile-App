@@ -28,7 +28,7 @@ export function SessionDetailScreen() {
 
   if (isLoading || !session) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator />
       </View>
     );
@@ -37,7 +37,7 @@ export function SessionDetailScreen() {
   return (
     <>
       <FocusAwareStatusBar />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 bg-background">
         <View className="flex-1 px-4 pt-4">
           <View className="mb-6 items-center">
             <Text className={`text-lg font-bold ${STATUS_COLORS[session.status]}`}>

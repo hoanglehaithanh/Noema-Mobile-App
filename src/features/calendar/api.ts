@@ -1,5 +1,7 @@
 import type { CalendarEvent, GoogleCalendarEvent } from './mappers';
 import { createQuery } from 'react-query-kit';
+import { persistGoogleProviderTokens, readGoogleProviderTokenForUser } from '@/features/auth/google-provider-token';
+import { getGoogleIdentity } from '@/features/settings/google-account-details';
 import { supabase } from '@/lib/supabase';
 import { mapGoogleEvent } from './mappers';
 
@@ -24,7 +26,8 @@ type CalendarEventPayload = {
   end: string;
 };
 
-async function getGoogleProviderToken() {
+/** Google OAuth access token from the current Supabase session (refreshes session if needed). */
+export async function getGoogleProviderToken() {
   const { data: { session }, error } = await supabase.auth.getSession();
   if (error)
     throw error;
@@ -32,15 +35,82 @@ async function getGoogleProviderToken() {
   if (!session)
     return null;
 
-  if (session.provider_token)
+  if (session.provider_token) {
+    persistGoogleProviderTokens({
+      userId: session.user.id,
+      providerToken: session.provider_token,
+      providerRefreshToken: session.provider_refresh_token,
+    });
     return session.provider_token;
+  }
 
   const { data, error: refreshError } = await supabase.auth.refreshSession();
   if (refreshError)
     throw refreshError;
 
-  return data.session?.provider_token ?? null;
+  if (data.session?.provider_token) {
+    persistGoogleProviderTokens({
+      userId: data.session.user.id,
+      providerToken: data.session.provider_token,
+      providerRefreshToken: data.session.provider_refresh_token,
+    });
+    return data.session.provider_token;
+  }
+
+  const fallbackToken = readGoogleProviderTokenForUser(session.user.id);
+  return fallbackToken;
 }
+
+export type CalendarSyncEligibility = {
+  /** Calendar API accepts the token (read-only list works). */
+  canSync: boolean;
+  /** User has a linked Google identity (e.g. signed in with Google). */
+  hasGoogleIdentity: boolean;
+  /** Session contained a provider token after refresh. */
+  hadProviderToken: boolean;
+  /** HTTP status from Calendar `calendarList` probe, if a request was made. */
+  calendarListStatus: number | null;
+};
+
+/**
+ * Whether the app can load Google Calendar data: valid provider token + Calendar API responds OK.
+ * Use this instead of `session.provider_token` alone (Zustand session can be stale; token may appear after refresh).
+ */
+export async function fetchCalendarSyncEligibility(): Promise<CalendarSyncEligibility> {
+  const { data: { session }, error } = await supabase.auth.getSession();
+  if (error)
+    throw error;
+
+  const user = session?.user ?? null;
+  const hasGoogleIdentity = Boolean(getGoogleIdentity(user));
+
+  const token = await getGoogleProviderToken();
+  if (!token) {
+    return {
+      canSync: false,
+      hasGoogleIdentity,
+      hadProviderToken: false,
+      calendarListStatus: null,
+    };
+  }
+
+  const res = await fetch(
+    'https://www.googleapis.com/calendar/v3/users/me/calendarList?maxResults=1',
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+
+  return {
+    canSync: res.ok,
+    hasGoogleIdentity,
+    hadProviderToken: true,
+    calendarListStatus: res.status,
+  };
+}
+
+export const useCalendarSyncEligibility = createQuery<CalendarSyncEligibility, void>({
+  queryKey: ['calendar_sync_eligibility'],
+  fetcher: () => fetchCalendarSyncEligibility(),
+});
 
 async function calendarRequest<T>(
   path: string,
@@ -53,7 +123,7 @@ async function calendarRequest<T>(
   const response = await fetch(`https://www.googleapis.com/calendar/v3${path}`, {
     ...init,
     headers: {
-      Authorization: `Bearer ${providerToken}`,
+      'Authorization': `Bearer ${providerToken}`,
       'Content-Type': 'application/json',
       ...(init?.headers ?? {}),
     },

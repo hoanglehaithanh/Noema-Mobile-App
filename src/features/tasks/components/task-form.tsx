@@ -1,29 +1,34 @@
 import type { TaskPriority, TaskStatus, TaskType } from '@/types';
 
 import * as React from 'react';
-import { Button, Text, View } from '@/components/ui';
+import { View } from 'react-native';
+
+import { Button, Text } from '@/components/ui';
 import { Input } from '@/components/ui/input';
-import { Select } from '@/components/ui/select';
 
-const TYPE_OPTIONS = [
-  { label: 'Deep', value: 'deep' },
-  { label: 'Shallow', value: 'shallow' },
-  { label: 'Admin', value: 'admin' },
-];
+import {
+  PlanningDateField,
+  TaskFieldLabel,
+  TaskPriorityPicker,
+  TaskStatusPicker,
+  TaskTypePicker,
+} from './task-form-fields';
 
-const STATUS_OPTIONS = [
-  { label: 'Inbox', value: 'inbox' },
-  { label: 'Planned', value: 'planned' },
-  { label: 'Active', value: 'active' },
-  { label: 'Done', value: 'done' },
-  { label: 'Archived', value: 'archived' },
-];
-
-const PRIORITY_OPTIONS = [
-  { label: 'High', value: 'high' },
-  { label: 'Medium', value: 'medium' },
-  { label: 'Low', value: 'low' },
-];
+function FormCard({
+  children,
+  className = '',
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <View
+      className={`mb-4 rounded-2xl border border-neutral-100 bg-card p-4 dark:border-neutral-800 ${className}`}
+    >
+      {children}
+    </View>
+  );
+}
 
 type TaskFormProps = {
   title: string;
@@ -53,73 +58,208 @@ type TaskFormProps = {
   loading?: boolean;
 };
 
-export function TaskForm(props: TaskFormProps) {
+function TaskTitleCard(props: Pick<TaskFormProps, 'title' | 'onChangeTitle'>) {
   return (
-    <View className="flex-1 px-4 pt-4">
-      <Input label="Title" value={props.title} onChangeText={props.onChangeTitle} testID="task-title" />
+    <FormCard>
+      <TaskFieldLabel>What needs to be done?</TaskFieldLabel>
       <Input
-        label="Description"
-        value={props.description}
-        onChangeText={props.onChangeDescription}
-        multiline
-        numberOfLines={4}
-        testID="task-description"
+        label=""
+        value={props.title}
+        onChangeText={props.onChangeTitle}
+        placeholder="Task name"
+        testID="task-title"
       />
-      <Input label="Notes" value={props.notes} onChangeText={props.onChangeNotes} multiline numberOfLines={3} testID="task-notes" />
-      <Input
-        label="Definition of done"
-        value={props.definitionOfDone}
-        onChangeText={props.onChangeDefinitionOfDone}
-        multiline
-        numberOfLines={3}
-        testID="task-definition-of-done"
-      />
-      <Input
-        label="Expected minutes"
-        value={props.expectedMinutes}
-        onChangeText={props.onChangeExpectedMinutes}
-        keyboardType="number-pad"
-        placeholder="60"
-        testID="task-expected-minutes"
-      />
-      <Input
-        label="Planning date"
+    </FormCard>
+  );
+}
+
+function TaskMetaCard(
+  props: Pick<
+    TaskFormProps,
+    | 'expectedMinutes'
+    | 'onChangeExpectedMinutes'
+    | 'priority'
+    | 'onChangePriority'
+    | 'planningDate'
+    | 'onChangePlanningDate'
+    | 'type'
+    | 'onChangeType'
+    | 'status'
+    | 'onChangeStatus'
+  >,
+) {
+  return (
+    <FormCard className="gap-4">
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <TaskFieldLabel>Duration (min)</TaskFieldLabel>
+          <Input
+            label=""
+            value={props.expectedMinutes}
+            onChangeText={props.onChangeExpectedMinutes}
+            keyboardType="number-pad"
+            placeholder="30"
+            testID="task-expected-minutes"
+          />
+        </View>
+        <View className="flex-1">
+          <TaskPriorityPicker
+            value={props.priority}
+            onSelect={props.onChangePriority}
+            testID="task-priority"
+          />
+        </View>
+      </View>
+
+      <PlanningDateField
         value={props.planningDate}
-        onChangeText={props.onChangePlanningDate}
-        placeholder="YYYY-MM-DD"
+        onChange={props.onChangePlanningDate}
         testID="task-planning-date"
       />
-      <Select label="Type" value={props.type} options={TYPE_OPTIONS} onSelect={v => props.onChangeType(v as TaskType)} testID="task-type" />
-      <Select label="Status" value={props.status} options={STATUS_OPTIONS} onSelect={v => props.onChangeStatus(v as TaskStatus)} testID="task-status" />
-      <Select label="Priority" value={props.priority} options={PRIORITY_OPTIONS} onSelect={v => props.onChangePriority(v as TaskPriority)} testID="task-priority" />
-      <Input
-        label="Result / outcome"
-        value={props.resultSummary}
-        onChangeText={props.onChangeResultSummary}
-        multiline
-        numberOfLines={3}
-        testID="task-result-summary"
+
+      <View className="flex-row gap-3">
+        <View className="flex-1">
+          <TaskTypePicker
+            value={props.type}
+            onSelect={props.onChangeType}
+            testID="task-type"
+          />
+        </View>
+        <View className="flex-1">
+          <TaskStatusPicker
+            value={props.status}
+            onSelect={props.onChangeStatus}
+            testID="task-status"
+          />
+        </View>
+      </View>
+    </FormCard>
+  );
+}
+
+function TaskLongTextCard(
+  props: Pick<
+    TaskFormProps,
+    | 'notes'
+    | 'onChangeNotes'
+    | 'description'
+    | 'onChangeDescription'
+    | 'definitionOfDone'
+    | 'onChangeDefinitionOfDone'
+    | 'resultSummary'
+    | 'onChangeResultSummary'
+  >,
+) {
+  return (
+    <FormCard className="gap-4">
+      <View>
+        <TaskFieldLabel>Detailed notes</TaskFieldLabel>
+        <Input
+          label=""
+          value={props.notes}
+          onChangeText={props.onChangeNotes}
+          multiline
+          numberOfLines={3}
+          placeholder="Context or sub-tasks…"
+          testID="task-notes"
+        />
+      </View>
+      <View>
+        <TaskFieldLabel>Description</TaskFieldLabel>
+        <Input
+          label=""
+          value={props.description}
+          onChangeText={props.onChangeDescription}
+          multiline
+          numberOfLines={4}
+          placeholder="Optional longer description…"
+          testID="task-description"
+        />
+      </View>
+      <View>
+        <TaskFieldLabel>Definition of done</TaskFieldLabel>
+        <Input
+          label=""
+          value={props.definitionOfDone}
+          onChangeText={props.onChangeDefinitionOfDone}
+          multiline
+          numberOfLines={3}
+          placeholder="How you’ll know it’s finished…"
+          testID="task-definition-of-done"
+        />
+      </View>
+      <View>
+        <TaskFieldLabel>Result / outcome</TaskFieldLabel>
+        <Input
+          label=""
+          value={props.resultSummary}
+          onChangeText={props.onChangeResultSummary}
+          multiline
+          numberOfLines={3}
+          placeholder="Summarize what shipped…"
+          testID="task-result-summary"
+        />
+      </View>
+    </FormCard>
+  );
+}
+
+export function TaskForm(props: TaskFormProps) {
+  return (
+    <View className="flex-1 px-4 pt-4 pb-8">
+      {props.createdAt && (
+        <Text className="mb-3 text-right text-xs text-muted-foreground">
+          {'Created '}
+          {new Date(props.createdAt).toLocaleDateString()}
+        </Text>
+      )}
+
+      <TaskTitleCard title={props.title} onChangeTitle={props.onChangeTitle} />
+      <TaskMetaCard
+        expectedMinutes={props.expectedMinutes}
+        onChangeExpectedMinutes={props.onChangeExpectedMinutes}
+        priority={props.priority}
+        onChangePriority={props.onChangePriority}
+        planningDate={props.planningDate}
+        onChangePlanningDate={props.onChangePlanningDate}
+        type={props.type}
+        onChangeType={props.onChangeType}
+        status={props.status}
+        onChangeStatus={props.onChangeStatus}
+      />
+      <TaskLongTextCard
+        notes={props.notes}
+        onChangeNotes={props.onChangeNotes}
+        description={props.description}
+        onChangeDescription={props.onChangeDescription}
+        definitionOfDone={props.definitionOfDone}
+        onChangeDefinitionOfDone={props.onChangeDefinitionOfDone}
+        resultSummary={props.resultSummary}
+        onChangeResultSummary={props.onChangeResultSummary}
       />
 
-      <View className="mt-4">
+      <View className="mt-2">
         <Button
           label={props.saveLabel ?? 'Save'}
           onPress={props.onSave}
           loading={props.loading}
           disabled={!props.title.trim()}
+          variant="outline"
+          className="border-neutral-300 bg-transparent dark:border-neutral-600"
+          textClassName="text-foreground"
           testID="task-save"
         />
       </View>
 
       {props.onMarkDone && (
-        <Button label="Mark as Done" variant="secondary" onPress={props.onMarkDone} loading={props.loading} className="mt-2" />
-      )}
-
-      {props.createdAt && (
-        <Text className="mt-6 text-center text-xs text-muted-foreground">
-          {'Created '}
-          {new Date(props.createdAt).toLocaleDateString()}
-        </Text>
+        <Button
+          label="Mark as Done"
+          variant="default"
+          onPress={props.onMarkDone}
+          loading={props.loading}
+          className="mt-2 bg-success-600 dark:bg-success-500"
+          textClassName="text-white dark:text-white"
+        />
       )}
     </View>
   );

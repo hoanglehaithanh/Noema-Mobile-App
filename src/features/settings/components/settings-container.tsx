@@ -10,11 +10,16 @@ type Props = {
 
 export function SettingsContainer({ children, title }: Props) {
   return (
-    <>
-      {title && <Text className="pt-4 pb-2 text-lg" tx={title} />}
-      <View className="rounded-md border border-neutral-200 dark:border-neutral-700 dark:bg-neutral-800">
+    <View className="mb-2">
+      {title && (
+        <Text
+          className="mb-3 ml-1 text-xs font-semibold tracking-widest text-muted-foreground uppercase"
+          tx={title}
+        />
+      )}
+      <View className="overflow-hidden rounded-2xl border border-neutral-100 bg-card shadow-sm dark:border-neutral-800 dark:shadow-none">
         {children}
       </View>
-    </>
+    </View>
   );
 }

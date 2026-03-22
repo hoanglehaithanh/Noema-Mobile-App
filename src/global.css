@@ -103,9 +103,12 @@
   --color-destructive-foreground: #ffffff;
 }
 
-/* Dark mode colors */
-@media (prefers-color-scheme: dark) {
-  @theme {
+/*
+ * Dark semantic tokens must follow the app `dark` class (Uniwind), not OS
+ * `prefers-color-scheme`, so they stay in sync with Settings → theme.
+ */
+@layer theme {
+  .dark {
     --color-background: #0a0a0a;
     --color-foreground: #fafafa;
 

@@ -76,7 +76,14 @@ export default function RootLayout() {
   return (
     <Providers>
       <Stack>
-        <Stack.Screen name="(app)" options={{ headerShown: false }} />
+        <Stack.Screen
+          name="(app)"
+          options={{
+            headerShown: false,
+            // Used as iOS back-button label when child screens do not pass `?from=`.
+            title: 'Home',
+          }}
+        />
         <Stack.Screen name="login" options={{ headerShown: false }} />
         <Stack.Screen
           name="capture"
@@ -87,17 +94,25 @@ export default function RootLayout() {
         />
         <Stack.Screen
           name="task/[id]"
-          options={{ title: 'Task' }}
+          options={({ route }) => {
+            const params = route.params as { id?: string; from?: string } | undefined;
+            const id = params?.id;
+            const from = typeof params?.from === 'string' ? params.from.trim() : undefined;
+            return {
+              title: id === 'new' ? 'New task' : 'Task',
+              headerBackTitle: from || undefined,
+            };
+          }}
         />
         <Stack.Screen
           name="session/[id]"
-          options={{ title: 'Session' }}
-        />
-        <Stack.Screen
-          name="settings"
-          options={{
-            title: 'Settings',
-            presentation: 'modal',
+          options={({ route }) => {
+            const params = route.params as { from?: string } | undefined;
+            const from = typeof params?.from === 'string' ? params.from.trim() : undefined;
+            return {
+              title: 'Session',
+              headerBackTitle: from || undefined,
+            };
           }}
         />
       </Stack>

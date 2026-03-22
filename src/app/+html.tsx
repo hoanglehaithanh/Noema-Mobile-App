@@ -36,12 +36,8 @@ export default function Root({ children }: { children: React.ReactNode }) {
   );
 }
 
+/* Match default light @theme background; in-app theme uses .dark on the React root. */
 const responsiveBackground = `
 body {
-  background-color: #fff;
-}
-@media (prefers-color-scheme: dark) {
-  body {
-    background-color: #000;
-  }
+  background-color: #ffffff;
 }`;

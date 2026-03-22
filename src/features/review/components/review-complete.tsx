@@ -11,11 +11,11 @@ export function ReviewComplete({ review }: Props) {
   return (
     <>
       <FocusAwareStatusBar />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 bg-background">
         <View className="flex-1 items-center justify-center px-4 pt-16">
-          <Text className="text-2xl font-bold">Day Closed</Text>
+          <Text className="text-3xl font-extrabold tracking-tight text-foreground">Review Saved</Text>
           <Text className="mt-2 text-center text-muted-foreground">
-            Your shutdown review for today has been saved. Rest well.
+            Your review is saved with today's insights and tomorrow's recommendation.
           </Text>
 
           {review.first_task_tomorrow && (

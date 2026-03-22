@@ -7,25 +7,28 @@ import {
   ActivityIndicator,
   FocusAwareStatusBar,
   ScrollView,
+  Text,
   View,
 } from '@/components/ui';
 import { getLocalDateKey } from '@/features/home/planning';
+import { hrefTask } from '@/lib/href-task';
 import { useCreateTask, useTask, useUpdateTask } from './api';
 import { TaskForm } from './components/task-form';
 
 export function TaskDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id } = useLocalSearchParams<{ id: string; from?: string }>();
   if (id === 'new')
     return <CreateTaskScreen />;
 
   return <EditTaskScreen id={id!} />;
 }
 
-function CreateTaskScreen() {
+export function CreateTaskScreen() {
   const router = useRouter();
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const queryClient = useQueryClient();
   const { mutate: createTask, isPending } = useCreateTask();
-  const form = useTaskEditorState();
+  const form = useTaskEditorState({ status: 'inbox', planningDate: '' });
 
   const invalidateTasks = React.useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['tasks'] });
@@ -51,16 +54,22 @@ function CreateTaskScreen() {
       {
         onSuccess: (task) => {
           invalidateTasks();
-          router.replace(`/task/${task.id}`);
+          router.replace(hrefTask(task.id, typeof from === 'string' ? from : undefined));
         },
       },
     );
-  }, [createTask, form, invalidateTasks, router]);
+  }, [createTask, form, from, invalidateTasks, router]);
 
   return (
     <>
       <FocusAwareStatusBar />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 bg-background">
+        <View className="px-4 pt-16">
+          <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-muted-foreground">
+            Add Task
+          </Text>
+          <Text className="mt-2 text-3xl font-extrabold text-foreground">New Task</Text>
+        </View>
         <TaskForm
           title={form.title}
           description={form.description}
@@ -181,7 +190,7 @@ function EditTaskScreen({ id }: { id: string }) {
 
   if (isLoading || !task) {
     return (
-      <View className="flex-1 items-center justify-center">
+      <View className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator />
       </View>
     );
@@ -190,7 +199,13 @@ function EditTaskScreen({ id }: { id: string }) {
   return (
     <>
       <FocusAwareStatusBar />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 bg-background">
+        <View className="px-4 pt-16">
+          <Text className="text-[11px] font-semibold uppercase tracking-[2px] text-muted-foreground">
+            Task Detail
+          </Text>
+          <Text className="mt-2 text-3xl font-extrabold text-foreground">{task.title}</Text>
+        </View>
         <TaskForm
           title={form.title}
           description={form.description}
@@ -222,16 +237,23 @@ function EditTaskScreen({ id }: { id: string }) {
   );
 }
 
-function useTaskEditorState() {
+type TaskEditorInitial = Partial<{
+  status: TaskStatus;
+  planningDate: string;
+}>;
+
+function useTaskEditorState(initial?: TaskEditorInitial) {
   const [title, setTitle] = React.useState('');
   const [description, setDescription] = React.useState('');
   const [notes, setNotes] = React.useState('');
   const [definitionOfDone, setDefinitionOfDone] = React.useState('');
   const [expectedMinutes, setExpectedMinutes] = React.useState('');
   const [resultSummary, setResultSummary] = React.useState('');
-  const [planningDate, setPlanningDate] = React.useState(getLocalDateKey());
+  const [planningDate, setPlanningDate] = React.useState(() =>
+    initial?.planningDate !== undefined ? initial.planningDate : getLocalDateKey(),
+  );
   const [type, setType] = React.useState<TaskType>('deep');
-  const [status, setStatus] = React.useState<TaskStatus>('planned');
+  const [status, setStatus] = React.useState<TaskStatus>(() => initial?.status ?? 'planned');
   const [priority, setPriority] = React.useState<TaskPriority>('medium');
 
   return {

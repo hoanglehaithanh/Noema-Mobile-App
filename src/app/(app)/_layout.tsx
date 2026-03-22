@@ -2,15 +2,15 @@ import { Redirect } from 'expo-router';
 import { NativeTabs } from 'expo-router/unstable-native-tabs';
 import * as React from 'react';
 
-import { useCaptures } from '@/features/capture/api';
-import { useTasks } from '@/features/tasks/api';
 import { useAuthStore as useAuth } from '@/features/auth/use-auth-store';
+import { useCaptures } from '@/features/capture/api';
+import { useQueueTasks } from '@/features/inbox/use-queue-tasks';
 
 function QueueBadge() {
   const { data: captures } = useCaptures({ variables: { processed: false } });
-  const { data: inboxTasks } = useTasks({ variables: { status: 'inbox' } });
+  const { tasks: queueTasks } = useQueueTasks();
 
-  const total = (captures?.length ?? 0) + (inboxTasks?.length ?? 0);
+  const total = (captures?.length ?? 0) + queueTasks.length;
   if (total === 0)
     return null;
 
@@ -35,23 +35,39 @@ export default function TabLayout() {
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
+      <NativeTabs.Trigger name="calendar">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'calendar', selected: 'calendar' }}
+          md="calendar_today"
+        />
+        <NativeTabs.Trigger.Label>Calendar</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="add-task">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'plus.circle', selected: 'plus.circle.fill' }}
+          md="add_circle"
+        />
+        <NativeTabs.Trigger.Label>Add task</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
       <NativeTabs.Trigger name="inbox">
         <NativeTabs.Trigger.Icon sf={{ default: 'tray', selected: 'tray.fill' }} md="inbox" />
         <NativeTabs.Trigger.Label>Queue</NativeTabs.Trigger.Label>
         <QueueBadge />
       </NativeTabs.Trigger>
 
-      <NativeTabs.Trigger name="focus">
-        <NativeTabs.Trigger.Icon sf={{ default: 'timer', selected: 'timer' }} md="timer" />
-        <NativeTabs.Trigger.Label>Focus</NativeTabs.Trigger.Label>
-      </NativeTabs.Trigger>
-
-      <NativeTabs.Trigger name="chat">
-        <NativeTabs.Trigger.Icon sf={{ default: 'bubble.left', selected: 'bubble.left.fill' }} md="chat" />
-        <NativeTabs.Trigger.Label>Chat</NativeTabs.Trigger.Label>
+      <NativeTabs.Trigger name="settings">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: 'gearshape', selected: 'gearshape.fill' }}
+          md="settings"
+        />
+        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
 
       {/* Hidden screens — not shown in tab bar */}
+      <NativeTabs.Trigger name="focus" hidden />
+      <NativeTabs.Trigger name="chat" hidden />
       <NativeTabs.Trigger name="review" hidden />
     </NativeTabs>
   );

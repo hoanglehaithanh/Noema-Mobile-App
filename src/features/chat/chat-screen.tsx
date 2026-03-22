@@ -60,7 +60,7 @@ export function ChatScreen() {
     <>
       <FocusAwareStatusBar />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior="padding" keyboardVerticalOffset={90}>
-        <View className="flex-1 pt-16">
+        <View className="flex-1 bg-background pt-16">
           <View className="px-4">
             <Text className="text-2xl font-bold">Planning Chat</Text>
             <Text className="mb-4 text-sm text-muted-foreground">

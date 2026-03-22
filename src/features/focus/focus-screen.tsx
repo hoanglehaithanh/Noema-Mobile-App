@@ -204,7 +204,7 @@ export function FocusScreen() {
   return (
     <>
       <FocusAwareStatusBar />
-      <View className="flex-1 pt-16">
+      <View className="flex-1 bg-background pt-16">
         {phase === 'setup' && (
           <FocusSetup
             selectedBlockId={selectedBlockId}

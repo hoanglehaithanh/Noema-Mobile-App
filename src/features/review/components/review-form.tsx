@@ -26,15 +26,15 @@ export function ReviewForm(props: ReviewFormProps) {
   return (
     <>
       <FocusAwareStatusBar />
-      <ScrollView className="flex-1">
+      <ScrollView className="flex-1 bg-background">
         <View className="flex-1 px-4 pt-16 pb-8">
-          <Text className="text-2xl font-bold">Shutdown Review</Text>
+          <Text className="ml-2 text-4xl font-extrabold tracking-tight text-foreground">Review</Text>
           <Text className="mt-1 mb-6 text-sm text-muted-foreground">
-            Reconcile today&apos;s plan, then carry tomorrow forward cleanly.
+            You're staying consistent this week. Keep it up.
           </Text>
 
           <Input
-            label="What was completed?"
+            label="On time highlights"
             placeholder="List what you finished today..."
             value={props.completedSummary}
             onChangeText={props.onChangeCompleted}
@@ -43,7 +43,7 @@ export function ReviewForm(props: ReviewFormProps) {
             testID="review-completed"
           />
           <Input
-            label="What remains open?"
+            label="Queue insights"
             placeholder="Unfinished tasks or loose ends..."
             value={props.openLoops}
             onChangeText={props.onChangeOpen}
@@ -52,7 +52,7 @@ export function ReviewForm(props: ReviewFormProps) {
             testID="review-open"
           />
           <Input
-            label="First important task for tomorrow"
+            label="Recommendation for tomorrow"
             placeholder="What will you start with?"
             value={props.firstTaskTomorrow}
             onChangeText={props.onChangeTomorrow}
@@ -70,7 +70,7 @@ export function ReviewForm(props: ReviewFormProps) {
 
           <View className="mt-4">
             <Button
-              label="Complete Shutdown"
+              label="Save Review"
               onPress={props.onSubmit}
               loading={props.loading}
               testID="review-submit"

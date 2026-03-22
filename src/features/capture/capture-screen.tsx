@@ -11,6 +11,7 @@ import {
   View,
 } from '@/components/ui';
 import { Input } from '@/components/ui/input';
+import { showErrorMessage } from '@/components/ui/utils';
 import { useCreateCapture } from './api';
 
 const KINDS: { label: string; value: CaptureKind }[] = [
@@ -46,6 +47,15 @@ export function CaptureScreen({ onCaptured, embedded }: CaptureScreenProps = {})
             router.back();
           }
         },
+        onError: (error: unknown) => {
+          const message
+            = error instanceof Error
+              ? error.message
+              : typeof error === 'object' && error !== null && 'message' in error
+                ? String((error as { message: unknown }).message)
+                : 'Could not save capture';
+          showErrorMessage(message);
+        },
       },
     );
   };
@@ -59,7 +69,7 @@ export function CaptureScreen({ onCaptured, embedded }: CaptureScreenProps = {})
     <>
       {!embedded && <FocusAwareStatusBar />}
       <Wrapper {...wrapperProps}>
-        <View className="flex-1 px-4 pt-6">
+        <View className="flex-1 bg-background px-4 pt-6">
           {!embedded && (
             <Text className="mb-4 text-2xl font-bold">Quick Capture</Text>
           )}

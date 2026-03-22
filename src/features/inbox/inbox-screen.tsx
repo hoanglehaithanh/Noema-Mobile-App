@@ -4,18 +4,32 @@ import type { Capture, Task } from '@/types';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import * as React from 'react';
-import { SectionList } from 'react-native';
+import {
+  Modal as RNModal,
+  Platform,
+  Pressable as RNPressable,
+  RefreshControl,
+  SectionList,
+  StyleSheet,
+} from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useUniwind } from 'uniwind';
+
 import {
   ActivityIndicator,
   FocusAwareStatusBar,
   Pressable,
+  ScrollView,
   Text,
   View,
 } from '@/components/ui';
+import colors from '@/components/ui/colors';
 import { useCaptures, useUpdateCapture } from '@/features/capture/api';
 import { getLocalDateKey } from '@/features/home/planning';
-import { useCreateTask, useTasks, useUpdateTask } from '@/features/tasks/api';
+import { useCreateTask, useUpdateTask } from '@/features/tasks/api';
+import { hrefTask } from '@/lib/href-task';
 import { TriageSheet } from './components/triage-sheet';
+import { useQueueTasks } from './use-queue-tasks';
 
 // ─────────────────────────────────────────────────────────
 // Capture Queue Card
@@ -108,13 +122,18 @@ function InboxTaskCard({
   const router = useRouter();
   return (
     <Pressable
-      onPress={() => router.push(`/task/${task.id}`)}
-      className="overflow-hidden rounded-2xl bg-card border border-neutral-100 dark:border-neutral-800"
+      onPress={() => router.push(hrefTask(task.id, 'Queue'))}
+      className="overflow-hidden rounded-2xl bg-card border border-neutral-100 px-1 dark:border-neutral-800"
     >
       <View className="flex-row items-start gap-3 px-4 py-3">
         {/* Priority dot */}
         <View className={`mt-1.5 size-2 rounded-full ${PRIORITY_DOT[task.priority] ?? 'bg-neutral-300'}`} />
         <View className="flex-1">
+          <Text className="text-[10px] font-semibold uppercase tracking-[2px] text-muted-foreground">
+            {task.priority}
+            {' '}
+            priority
+          </Text>
           <Text className="text-sm font-semibold text-foreground" numberOfLines={2}>
             {task.title}
           </Text>
@@ -156,16 +175,65 @@ type Section =
   | { title: string; data: Capture[]; kind: 'capture' }
   | { title: string; data: Task[]; kind: 'task' };
 
+const triageModalStyles = StyleSheet.create({
+  root: {
+    flex: 1,
+  },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
+  },
+  centerWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+  },
+  card: {
+    width: '100%',
+    maxWidth: 400,
+    borderRadius: 16,
+    borderWidth: StyleSheet.hairlineWidth,
+    overflow: 'hidden',
+  },
+});
+
 export function InboxScreen() {
   const queryClient = useQueryClient();
-  const { data: captures, isLoading: loadingCaptures } = useCaptures({ variables: { processed: false } });
-  const { data: inboxTasks, isLoading: loadingTasks } = useTasks({ variables: { status: 'inbox' } });
+  const insets = useSafeAreaInsets();
+  const { theme } = useUniwind();
+  const triageCardBg = theme === 'dark' ? colors.neutral[900] : colors.white;
+  const triageCardBorder = theme === 'dark' ? colors.neutral[700] : colors.neutral[200];
+  const {
+    data: captures,
+    isLoading: loadingCaptures,
+    refetch: refetchCaptures,
+    isRefetching: refetchingCaptures,
+  } = useCaptures({ variables: { processed: false } });
+  const {
+    tasks: queueTasks,
+    isLoading: loadingQueueTasks,
+    isRefetching: refetchingQueueTasks,
+    refetch: refetchQueueTasks,
+  } = useQueueTasks();
   const { mutate: updateCapture, isPending: isUpdating } = useUpdateCapture();
   const { mutate: createTask } = useCreateTask();
   const { mutate: updateTask } = useUpdateTask();
   const [selected, setSelected] = React.useState<Capture | null>(null);
 
-  const isLoading = loadingCaptures || loadingTasks;
+  const isLoading = loadingCaptures || loadingQueueTasks;
+  const refreshing = refetchingCaptures || refetchingQueueTasks;
+
+  const onRefresh = React.useCallback(() => {
+    void Promise.all([refetchCaptures(), refetchQueueTasks()]);
+  }, [refetchCaptures, refetchQueueTasks]);
+
+  const refreshControl = React.useMemo(
+    () => (
+      <RefreshControl refreshing={refreshing} onRefresh={onRefresh} />
+    ),
+    [onRefresh, refreshing],
+  );
 
   const handleTriage = React.useCallback((capture: Capture, action: TriageAction) => {
     if (action.type === 'task') {
@@ -234,13 +302,13 @@ export function InboxScreen() {
     if (captures && captures.length > 0) {
       result.push({ title: 'Captures', data: captures, kind: 'capture' });
     }
-    if (inboxTasks && inboxTasks.length > 0) {
-      result.push({ title: 'Inbox Tasks', data: inboxTasks, kind: 'task' });
+    if (queueTasks.length > 0) {
+      result.push({ title: 'Tasks', data: queueTasks, kind: 'task' });
     }
     return result;
-  }, [captures, inboxTasks]);
+  }, [captures, queueTasks]);
 
-  const totalCount = (captures?.length ?? 0) + (inboxTasks?.length ?? 0);
+  const totalCount = (captures?.length ?? 0) + queueTasks.length;
 
   const renderItem = React.useCallback(
     ({ item, section }: { item: Capture | Task; section: Section }) => {
@@ -282,18 +350,18 @@ export function InboxScreen() {
         {/* ── Header ── */}
         <View className="flex-row items-center justify-between px-4 pt-16 pb-4">
           <View>
-            <Text className="text-2xl font-bold text-foreground">Queue</Text>
-            <Text className="mt-0.5 text-sm text-muted-foreground">
+            <View className="flex-row items-center gap-2">
+              <Text className="text-4xl font-extrabold tracking-tight text-foreground">Queue</Text>
+              <View className="rounded-full bg-neutral-100 px-2 py-1 dark:bg-neutral-800">
+                <Text className="text-xs font-semibold text-muted-foreground">{totalCount}</Text>
+              </View>
+            </View>
+            <Text className="mt-1 text-sm text-muted-foreground">
               {totalCount === 0
                 ? 'All clear'
-                : `${totalCount} item${totalCount === 1 ? '' : 's'} to process`}
+                : 'Unscheduled focus items awaiting your attention.'}
             </Text>
           </View>
-          {totalCount > 0 && (
-            <View className="min-w-8 items-center justify-center rounded-full bg-danger-500 px-2 py-1">
-              <Text className="text-sm font-bold text-white">{totalCount}</Text>
-            </View>
-          )}
         </View>
 
         {isLoading
@@ -304,13 +372,18 @@ export function InboxScreen() {
             )
           : sections.length === 0
             ? (
-                <View className="flex-1 items-center justify-center px-8">
+                <ScrollView
+                  className="flex-1"
+                  contentContainerStyle={{ flexGrow: 1, justifyContent: 'center', alignItems: 'center', paddingHorizontal: 32 }}
+                  refreshControl={refreshControl}
+                  showsVerticalScrollIndicator={false}
+                >
                   <Text className="text-5xl">✓</Text>
                   <Text className="mt-4 text-xl font-bold text-foreground">Queue clear</Text>
                   <Text className="mt-2 text-center text-sm text-muted-foreground">
-                    You're all caught up. Captures and inbox tasks will appear here.
+                    You're all caught up. Captures and tasks not yet on your calendar will appear here.
                   </Text>
-                </View>
+                </ScrollView>
               )
             : (
                 <SectionList
@@ -321,21 +394,54 @@ export function InboxScreen() {
                   contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 32 }}
                   showsVerticalScrollIndicator={false}
                   stickySectionHeadersEnabled={false}
+                  refreshControl={refreshControl}
                 />
               )}
       </View>
 
-      {/* ── Triage Sheet ── */}
-      {selected && (
-        <View className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-neutral-200 bg-card pt-4 dark:border-neutral-700">
-          <TriageSheet
-            capture={selected}
-            onAction={handleTriage}
-            onCancel={() => setSelected(null)}
-            loading={isUpdating}
+      <RNModal
+        visible={Boolean(selected)}
+        transparent
+        animationType="fade"
+        statusBarTranslucent
+        presentationStyle={Platform.OS === 'ios' ? 'overFullScreen' : undefined}
+        onRequestClose={() => setSelected(null)}
+      >
+        <View
+          style={[
+            triageModalStyles.root,
+            { paddingTop: insets.top, paddingBottom: insets.bottom },
+          ]}
+        >
+          <RNPressable
+            style={triageModalStyles.backdrop}
+            onPress={() => setSelected(null)}
+            accessibilityRole="button"
+            accessibilityLabel="Dismiss triage"
           />
+          <View style={triageModalStyles.centerWrap} pointerEvents="box-none">
+            <View
+              style={[
+                triageModalStyles.card,
+                {
+                  backgroundColor: triageCardBg,
+                  borderColor: triageCardBorder,
+                },
+              ]}
+              pointerEvents="auto"
+            >
+              {selected && (
+                <TriageSheet
+                  capture={selected}
+                  onAction={handleTriage}
+                  onCancel={() => setSelected(null)}
+                  loading={isUpdating}
+                />
+              )}
+            </View>
+          </View>
         </View>
-      )}
+      </RNModal>
     </>
   );
 }

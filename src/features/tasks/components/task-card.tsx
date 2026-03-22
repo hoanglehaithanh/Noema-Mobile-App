@@ -1,8 +1,9 @@
 import type { Task } from '@/types';
 import { useRouter } from 'expo-router';
-
 import * as React from 'react';
+
 import { Pressable, Text, View } from '@/components/ui';
+import { hrefTask } from '@/lib/href-task';
 
 const TYPE_LABELS: Record<string, string> = {
   deep: 'Deep',
@@ -25,14 +26,16 @@ const PRIORITY_INDICATOR: Record<string, string> = {
 type TaskCardProps = {
   task: Task;
   compact?: boolean;
+  /** Shown as the iOS back label when this card opens the root-stack task screen. */
+  backTitle?: string;
 };
 
-export function TaskCard({ task, compact }: TaskCardProps) {
+export function TaskCard({ task, compact, backTitle }: TaskCardProps) {
   const router = useRouter();
 
   return (
     <Pressable
-      onPress={() => router.push(`/task/${task.id}`)}
+      onPress={() => router.push(hrefTask(task.id, backTitle))}
       className="mb-2 rounded-xl border border-neutral-200 bg-card p-4 dark:border-neutral-700"
     >
       <View className="flex-row items-center gap-2">

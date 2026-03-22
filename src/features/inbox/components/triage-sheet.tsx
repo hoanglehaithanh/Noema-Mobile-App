@@ -17,36 +17,40 @@ type TriageSheetProps = {
 
 export function TriageSheet({ capture, onAction, onCancel, loading }: TriageSheetProps) {
   return (
-    <View className="px-4 pb-8">
+    <View className="p-5">
       <Text className="mb-1 text-lg font-bold">Triage</Text>
       <Text className="mb-4 text-muted-foreground" numberOfLines={2}>
         {capture.content}
       </Text>
 
-      <View className="gap-2">
+      <View>
         <Button
           label="Deep Task"
           variant="secondary"
           onPress={() => onAction(capture, { type: 'task', taskType: 'deep' })}
           loading={loading}
+          className="mb-3"
         />
         <Button
           label="Shallow Task"
           variant="outline"
           onPress={() => onAction(capture, { type: 'task', taskType: 'shallow' })}
           loading={loading}
+          className="mb-3"
         />
         <Button
           label="Keep as Note"
           variant="outline"
           onPress={() => onAction(capture, { type: 'note' })}
           loading={loading}
+          className="mb-3"
         />
         <Button
           label="Archive"
           variant="ghost"
           onPress={() => onAction(capture, { type: 'archive' })}
           loading={loading}
+          className="mb-1"
         />
       </View>
 
@@ -54,7 +58,7 @@ export function TriageSheet({ capture, onAction, onCancel, loading }: TriageShee
         label="Cancel"
         variant="ghost"
         onPress={onCancel}
-        className="mt-2"
+        className="mt-4"
       />
     </View>
   );

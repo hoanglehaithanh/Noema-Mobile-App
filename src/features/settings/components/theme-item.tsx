@@ -8,7 +8,11 @@ import { translate } from '@/lib/i18n';
 
 import { SettingsItem } from './settings-item';
 
-export function ThemeItem() {
+type ThemeItemProps = {
+  isLast?: boolean;
+};
+
+export function ThemeItem({ isLast }: ThemeItemProps) {
   const { selectedTheme, setSelectedTheme } = useSelectedTheme();
   const modal = useModal();
 
@@ -40,6 +44,7 @@ export function ThemeItem() {
         text="settings.theme.title"
         value={theme?.label}
         onPress={modal.present}
+        isLast={isLast}
       />
       <Options
         ref={modal.ref}

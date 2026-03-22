@@ -50,7 +50,7 @@ export function LoginForm({
       behavior="padding"
       keyboardVerticalOffset={10}
     >
-      <View className="flex-1 justify-center p-4">
+      <View className="flex-1 justify-center bg-background p-4">
         <View className="items-center justify-center">
           <Text
             testID="form-title"

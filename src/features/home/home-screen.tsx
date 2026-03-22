@@ -1,4 +1,3 @@
-import type { CalendarEvent } from '@/features/calendar/mappers';
 import type { CapacityBucket, TimelineItem } from './planning';
 import type { Task, TaskBlock } from '@/types';
 
@@ -9,7 +8,6 @@ import {
   Pressable as RNPressable,
   ScrollView as RNScrollView,
 } from 'react-native';
-import { useUniwind } from 'uniwind';
 import {
   colors,
   FocusAwareStatusBar,
@@ -18,12 +16,13 @@ import {
   Text,
   View,
 } from '@/components/ui';
-import { Review as CalendarIcon, Settings as SettingsIcon } from '@/components/ui/icons';
+import { Review as CalendarIcon } from '@/components/ui/icons';
 import { usePrimaryCalendarEvents } from '@/features/calendar/api';
 import { useCaptures } from '@/features/capture/api';
-import { useTaskBlocks, useCreateTaskBlock, useDeleteTaskBlock } from '@/features/tasks/blocks-api';
 import { useTasks } from '@/features/tasks/api';
-import { useDailyCapacity, useUpsertDailyCapacity } from './api';
+import { useCreateTaskBlock, useDeleteTaskBlock, useTaskBlocks } from '@/features/tasks/blocks-api';
+import { hrefTask } from '@/lib/href-task';
+import { useDailyCapacity } from './api';
 import { buildCapacityBuckets, buildTimelineItems, findNextOpenSlot, getDoNextBlock, getLocalDateKey, getUnscheduledTasks } from './planning';
 
 // ─────────────────────────────────────────────────────────
@@ -72,7 +71,7 @@ const TYPE_BG: Record<string, string> = {
 // Week Strip
 // ─────────────────────────────────────────────────────────
 
-function WeekStrip({
+export function WeekStrip({
   selectedDate,
   onSelectDate,
 }: {
@@ -136,9 +135,9 @@ function WeekStrip({
 // Schedule Header (month + chips)
 // ─────────────────────────────────────────────────────────
 
-type ScheduleChip = 'all' | 'personal' | 'work' | 'meetings';
+export type ScheduleChip = 'all' | 'personal' | 'work' | 'meetings';
 
-function ScheduleHeader({
+export function ScheduleHeader({
   baseDate,
   selected,
   onSelect,
@@ -225,7 +224,7 @@ function DoNextCard({ block, tasks }: { block: TaskBlock | null; tasks: Task[] }
             Add tasks to your timeline to get started.
           </Text>
           <Pressable
-            onPress={() => router.push('/task/new')}
+            onPress={() => router.push(hrefTask('new', 'Today'))}
             className="mt-4 items-center rounded-xl bg-primary-500 px-5 py-3"
           >
             <Text className="font-semibold text-white">New Task</Text>
@@ -272,7 +271,7 @@ function DoNextCard({ block, tasks }: { block: TaskBlock | null; tasks: Task[] }
             <Text className="font-semibold text-white">Start Focus</Text>
           </Pressable>
           <Pressable
-            onPress={() => router.push(`/task/${block.task_id}`)}
+            onPress={() => router.push(hrefTask(block.task_id, 'Today'))}
             className="items-center rounded-xl border border-primary-200 px-4 py-3 dark:border-primary-800"
           >
             <Text className="font-semibold text-primary-600 dark:text-primary-400">Details</Text>
@@ -305,7 +304,7 @@ function QuickActions({ unprocessedCount }: { unprocessedCount: number }) {
         </RNPressable>
       </Link>
       <Pressable
-        onPress={() => router.push('/task/new')}
+        onPress={() => router.push(hrefTask('new', 'Today'))}
         className="flex-1 flex-row items-center justify-between rounded-2xl bg-card px-5 py-4 border border-neutral-100 dark:border-neutral-800 shadow-sm dark:shadow-none"
       >
         <View>
@@ -368,7 +367,6 @@ function TimelineCard({
   item: TimelineItem;
   onDeleteBlock: (id: string) => void;
 }) {
-  const router = useRouter();
   const isCalendar = item.kind === 'calendar';
   const leftColor = isCalendar ? CALENDAR_LEFT_COLOR : (TYPE_COLOR[item.type] ?? 'bg-primary-500');
   const rightTime = isCalendar
@@ -412,7 +410,7 @@ function TimelineCard({
   );
 }
 
-function TimelineSection({
+export function TimelineSection({
   items,
   isLoading,
   isError,
@@ -486,7 +484,7 @@ function UnscheduledSection({
             className="overflow-hidden rounded-2xl bg-card border border-neutral-100 dark:border-neutral-800"
           >
             <View className="flex-row items-center px-4 py-3">
-              <Pressable onPress={() => router.push(`/task/${task.id}`)} className="flex-1">
+              <Pressable onPress={() => router.push(hrefTask(task.id, 'Today'))} className="flex-1">
                 <Text className="text-sm font-semibold text-foreground" numberOfLines={1}>
                   {task.title}
                 </Text>
@@ -524,10 +522,68 @@ function UnscheduledSection({
 // Main Screen
 // ─────────────────────────────────────────────────────────
 
+type HomeScrollProps = {
+  greeting: string;
+  dateLabel: string;
+  selectedDate: Date;
+  setSelectedDate: (d: Date) => void;
+  scheduleChip: ScheduleChip;
+  setScheduleChip: (c: ScheduleChip) => void;
+  currentBlock: TaskBlock | null;
+  tasks: Task[] | undefined;
+  capturesCount: number;
+  capacityBuckets: CapacityBucket[];
+  timelineItems: TimelineItem[];
+  calendarLoading: boolean;
+  calendarError: boolean;
+  onDeleteBlock: (id: string) => void;
+  unscheduledTasks: Task[];
+  onQuickSchedule: (task: Task) => void;
+};
+
+function HomeScroll(props: HomeScrollProps) {
+  return (
+    <>
+      <FocusAwareStatusBar />
+      <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
+        <View className="px-4 pb-2 pt-16">
+          <Text className="text-2xl font-extrabold tracking-tight text-foreground">Noema</Text>
+          <Text className="mt-3 text-4xl font-extrabold tracking-tight text-foreground">{props.greeting}</Text>
+          <Text className="mt-1 text-sm text-muted-foreground">{props.dateLabel}</Text>
+        </View>
+
+        <View className="mx-4 mt-3 rounded-2xl bg-card border border-neutral-100 py-3 dark:border-neutral-800 shadow-sm dark:shadow-none">
+          <ScheduleHeader
+            baseDate={props.selectedDate}
+            selected={props.scheduleChip}
+            onSelect={props.setScheduleChip}
+          />
+          <WeekStrip selectedDate={props.selectedDate} onSelectDate={props.setSelectedDate} />
+        </View>
+
+        <DoNextCard block={props.currentBlock} tasks={props.tasks ?? []} />
+
+        <QuickActions unprocessedCount={props.capturesCount} />
+
+        <CapacityPills buckets={props.capacityBuckets} />
+
+        <TimelineSection
+          items={props.timelineItems}
+          isLoading={props.calendarLoading}
+          isError={props.calendarError}
+          onDeleteBlock={props.onDeleteBlock}
+        />
+
+        <UnscheduledSection tasks={props.unscheduledTasks} onSchedule={props.onQuickSchedule} />
+
+        <View className="h-8" />
+      </ScrollView>
+    </>
+  );
+}
+
 export function HomeScreen() {
   const queryClient = useQueryClient();
-  const router = useRouter();
-  const { theme } = useUniwind();
   const [selectedDate, setSelectedDate] = React.useState(() => new Date());
   const selectedDayKey = React.useMemo(() => getLocalDateKey(selectedDate), [selectedDate]);
 
@@ -610,55 +666,26 @@ export function HomeScreen() {
     day: 'numeric',
   });
 
-  const headerIconColor = theme === 'dark' ? colors.neutral[300] : colors.neutral[700];
   const [scheduleChip, setScheduleChip] = React.useState<ScheduleChip>('all');
 
   return (
-    <>
-      <FocusAwareStatusBar />
-      <ScrollView className="flex-1 bg-background" showsVerticalScrollIndicator={false}>
-        {/* ── Header ── */}
-        <View className="flex-row items-start justify-between px-4 pb-2 pt-16">
-          <View>
-            <Text className="text-2xl font-bold text-foreground">{greeting}</Text>
-            <Text className="mt-0.5 text-sm text-muted-foreground">{dateLabel}</Text>
-          </View>
-          <Pressable
-            onPress={() => router.push('/settings')}
-            className="size-10 items-center justify-center rounded-full bg-card border border-neutral-100 shadow-sm dark:border-neutral-800 dark:shadow-none"
-          >
-            <SettingsIcon color={headerIconColor} />
-          </Pressable>
-        </View>
-
-        {/* ── Week Strip ── */}
-        <View className="mx-4 mt-3 rounded-2xl bg-card border border-neutral-100 py-3 dark:border-neutral-800 shadow-sm dark:shadow-none">
-          <ScheduleHeader baseDate={selectedDate} selected={scheduleChip} onSelect={setScheduleChip} />
-          <WeekStrip selectedDate={selectedDate} onSelectDate={setSelectedDate} />
-        </View>
-
-        {/* ── Do Next Hero Card ── */}
-        <DoNextCard block={currentBlock} tasks={tasks ?? []} />
-
-        {/* ── Quick Actions ── */}
-        <QuickActions unprocessedCount={captures?.length ?? 0} />
-
-        {/* ── Capacity Pills ── */}
-        <CapacityPills buckets={capacityBuckets} />
-
-        {/* ── Timeline ── */}
-        <TimelineSection
-          items={timelineItems}
-          isLoading={calendarQuery.isLoading}
-          isError={calendarQuery.isError}
-          onDeleteBlock={handleDeleteBlock}
-        />
-
-        {/* ── Unscheduled ── */}
-        <UnscheduledSection tasks={unscheduledTasks} onSchedule={handleQuickSchedule} />
-
-        <View className="h-8" />
-      </ScrollView>
-    </>
+    <HomeScroll
+      greeting={greeting}
+      dateLabel={dateLabel}
+      selectedDate={selectedDate}
+      setSelectedDate={setSelectedDate}
+      scheduleChip={scheduleChip}
+      setScheduleChip={setScheduleChip}
+      currentBlock={currentBlock}
+      tasks={tasks}
+      capturesCount={captures?.length ?? 0}
+      capacityBuckets={capacityBuckets}
+      timelineItems={timelineItems}
+      calendarLoading={calendarQuery.isLoading}
+      calendarError={calendarQuery.isError}
+      onDeleteBlock={handleDeleteBlock}
+      unscheduledTasks={unscheduledTasks}
+      onQuickSchedule={handleQuickSchedule}
+    />
   );
 }

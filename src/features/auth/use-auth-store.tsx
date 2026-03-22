@@ -1,6 +1,7 @@
 import type { Session } from '@supabase/supabase-js';
 
 import { create } from 'zustand';
+import { clearGoogleProviderTokens } from '@/features/auth/google-provider-token';
 import { supabase } from '@/lib/supabase';
 import { createSelectors } from '@/lib/utils';
 
@@ -10,6 +11,8 @@ type AuthState = {
   setSession: (session: Session | null) => void;
   signOut: () => void;
   hydrate: () => void;
+  /** Re-validates the JWT with Supabase and syncs session from storage into the store. */
+  verifySessionWithServer: () => Promise<void>;
 };
 
 const _useAuthStore = create<AuthState>(set => ({
@@ -25,6 +28,7 @@ const _useAuthStore = create<AuthState>(set => ({
   },
   signOut: async () => {
     await supabase.auth.signOut();
+    clearGoogleProviderTokens();
     set({ status: 'signOut', session: null });
   },
   hydrate: async () => {
@@ -46,9 +50,24 @@ const _useAuthStore = create<AuthState>(set => ({
       set({ status: 'signOut', session: null });
     }
   },
+  verifySessionWithServer: async () => {
+    try {
+      await supabase.auth.getUser();
+      const { data: { session } } = await supabase.auth.getSession();
+      _useAuthStore.getState().setSession(session ?? null);
+    }
+    catch (e) {
+      console.error(e);
+      const { data: { session } } = await supabase.auth.getSession();
+      _useAuthStore.getState().setSession(session ?? null);
+    }
+  },
 }));
 
 export const useAuthStore = createSelectors(_useAuthStore);
 
 export const signOut = () => _useAuthStore.getState().signOut();
 export const hydrateAuth = () => _useAuthStore.getState().hydrate();
+export function verifySessionWithServer() {
+  return _useAuthStore.getState().verifySessionWithServer();
+}
