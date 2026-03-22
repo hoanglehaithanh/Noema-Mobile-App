@@ -1,10 +1,12 @@
 import type { Profile } from '@/types';
 
 import { createMutation, createQuery } from 'react-query-kit';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 
 export const useProfile = createQuery<Profile | null, void>({
   queryKey: ['profile'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (!session)

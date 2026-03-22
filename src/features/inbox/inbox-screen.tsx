@@ -28,6 +28,7 @@ import { useCaptures, useUpdateCapture } from '@/features/capture/api';
 import { getLocalDateKey } from '@/features/home/planning';
 import { useCreateTask, useUpdateTask } from '@/features/tasks/api';
 import { hrefTask } from '@/lib/href-task';
+import { shouldShowBlockingQuerySpinner } from '@/lib/query-loading';
 import { TriageSheet } from './components/triage-sheet';
 import { useQueueTasks } from './use-queue-tasks';
 
@@ -204,15 +205,15 @@ export function InboxScreen() {
   const { theme } = useUniwind();
   const triageCardBg = theme === 'dark' ? colors.neutral[900] : colors.white;
   const triageCardBorder = theme === 'dark' ? colors.neutral[700] : colors.neutral[200];
+  const capturesQuery = useCaptures({ variables: { processed: false } });
   const {
     data: captures,
-    isLoading: loadingCaptures,
     refetch: refetchCaptures,
     isRefetching: refetchingCaptures,
-  } = useCaptures({ variables: { processed: false } });
+  } = capturesQuery;
   const {
     tasks: queueTasks,
-    isLoading: loadingQueueTasks,
+    isBlockingLoading: blockingQueueLoad,
     isRefetching: refetchingQueueTasks,
     refetch: refetchQueueTasks,
   } = useQueueTasks();
@@ -221,7 +222,7 @@ export function InboxScreen() {
   const { mutate: updateTask } = useUpdateTask();
   const [selected, setSelected] = React.useState<Capture | null>(null);
 
-  const isLoading = loadingCaptures || loadingQueueTasks;
+  const showBlockingLoader = shouldShowBlockingQuerySpinner(capturesQuery) || blockingQueueLoad;
   const refreshing = refetchingCaptures || refetchingQueueTasks;
 
   const onRefresh = React.useCallback(() => {
@@ -364,7 +365,7 @@ export function InboxScreen() {
           </View>
         </View>
 
-        {isLoading
+        {showBlockingLoader
           ? (
               <View className="flex-1 items-center justify-center">
                 <ActivityIndicator />

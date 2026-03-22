@@ -4,7 +4,6 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import * as React from 'react';
 
 import {
-  ActivityIndicator,
   FocusAwareStatusBar,
   ScrollView,
   Text,
@@ -100,10 +99,12 @@ export function CreateTaskScreen() {
   );
 }
 
+// eslint-disable-next-line max-lines-per-function -- task editor: form state, effects, and save handlers
 function EditTaskScreen({ id }: { id: string }) {
   const router = useRouter();
   const queryClient = useQueryClient();
-  const { data: task, isLoading } = useTask({ variables: { id } });
+  const taskQuery = useTask({ variables: { id } });
+  const { data: task, isFetched, isError } = taskQuery;
   const { mutate: updateTask, isPending } = useUpdateTask();
   const form = useTaskEditorState();
   const {
@@ -188,10 +189,14 @@ function EditTaskScreen({ id }: { id: string }) {
     );
   };
 
-  if (isLoading || !task) {
+  if (!task) {
+    if (!isFetched)
+      return <View className="flex-1 bg-background" />;
     return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
+      <View className="flex-1 items-center justify-center bg-background px-6">
+        <Text className="text-center text-sm text-muted-foreground">
+          {isError ? 'We could not load this task.' : 'Task not found.'}
+        </Text>
       </View>
     );
   }

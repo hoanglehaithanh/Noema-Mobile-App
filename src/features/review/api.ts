@@ -1,10 +1,12 @@
 import type { CreateShutdownReviewInput, ShutdownReview } from '@/types';
 
 import { createMutation, createQuery } from 'react-query-kit';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 
 export const useShutdownReview = createQuery<ShutdownReview | null, { date: string }>({
   queryKey: ['shutdown_reviews'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     const { data, error } = await supabase
       .from('shutdown_reviews')

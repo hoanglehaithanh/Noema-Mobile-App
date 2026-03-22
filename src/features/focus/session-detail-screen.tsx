@@ -2,7 +2,6 @@ import { useLocalSearchParams } from 'expo-router';
 import * as React from 'react';
 
 import {
-  ActivityIndicator,
   FocusAwareStatusBar,
   ScrollView,
   Text,
@@ -24,12 +23,17 @@ const STATUS_COLORS: Record<string, string> = {
 
 export function SessionDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data: session, isLoading } = useFocusSession({ variables: { id: id! } });
+  const sessionQuery = useFocusSession({ variables: { id: id! } });
+  const { data: session, isFetched, isError } = sessionQuery;
 
-  if (isLoading || !session) {
+  if (!session) {
+    if (!isFetched)
+      return <View className="flex-1 bg-background" />;
     return (
-      <View className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator />
+      <View className="flex-1 items-center justify-center bg-background px-6">
+        <Text className="text-center text-sm text-muted-foreground">
+          {isError ? 'We could not load this session.' : 'Session not found.'}
+        </Text>
       </View>
     );
   }

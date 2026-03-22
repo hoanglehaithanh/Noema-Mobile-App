@@ -31,6 +31,7 @@ export function SettingsScreen() {
     isFetching: isCalendarEligibilityFetching,
     isError: isCalendarEligibilityError,
     refetch: refetchCalendarEligibility,
+    isFetched: calendarEligibilityFetched,
   } = useCalendarSyncEligibility();
   const appliedGoogleDisplayNameRef = React.useRef(false);
   const { theme } = useUniwind();
@@ -81,7 +82,10 @@ export function SettingsScreen() {
     );
   }, [profile, googleFullName, updateProfile, queryClient]);
 
-  const isCheckingCalendarSync = isCalendarEligibilityFetching && calendarEligibility === undefined;
+  const isCheckingCalendarSync
+    = isCalendarEligibilityFetching
+      && calendarEligibility === undefined
+      && calendarEligibilityFetched;
   const calendarCanSync = calendarEligibility?.canSync ?? false;
   const calendarSuggestReconnect = Boolean(
     (calendarEligibility

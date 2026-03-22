@@ -1,16 +1,18 @@
 import type {
   CreateDailyBriefInput,
-  DailyCapacity,
   DailyBrief,
-  UpsertDailyCapacityInput,
+  DailyCapacity,
   UpdateDailyBriefInput,
+  UpsertDailyCapacityInput,
 } from '@/types';
 
 import { createMutation, createQuery } from 'react-query-kit';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 
 export const useDailyBrief = createQuery<DailyBrief | null, { date: string }>({
   queryKey: ['daily_briefs'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     const { data, error } = await supabase
       .from('daily_briefs')
@@ -56,6 +58,7 @@ export const useUpdateDailyBrief = createMutation<
 
 export const useDailyCapacity = createQuery<DailyCapacity | null, { date: string }>({
   queryKey: ['daily_capacity'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     const { data, error } = await supabase
       .from('daily_capacity')

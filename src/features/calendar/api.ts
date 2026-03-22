@@ -2,6 +2,7 @@ import type { CalendarEvent, GoogleCalendarEvent } from './mappers';
 import { createQuery } from 'react-query-kit';
 import { persistGoogleProviderTokens, readGoogleProviderTokenForUser } from '@/features/auth/google-provider-token';
 import { getGoogleIdentity } from '@/features/settings/google-account-details';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 import { mapGoogleEvent } from './mappers';
 
@@ -142,6 +143,7 @@ async function calendarRequest<T>(
 
 export const usePrimaryCalendarEvents = createQuery<CalendarEvent[], { date?: string }>({
   queryKey: ['calendar_primary_events'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     const isConnected = await getGoogleProviderToken();
     if (!isConnected)

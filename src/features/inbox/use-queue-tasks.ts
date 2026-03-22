@@ -5,6 +5,7 @@ import * as React from 'react';
 import { getLocalDateKey } from '@/features/home/planning';
 import { useTasks } from '@/features/tasks/api';
 import { useTaskBlocks } from '@/features/tasks/blocks-api';
+import { shouldShowBlockingSpinnerAny } from '@/lib/query-loading';
 
 const PRIORITY_ORDER: Record<Task['priority'], number> = {
   high: 0,
@@ -61,24 +62,27 @@ export function buildQueueTasks({
 
 export function useQueueTasks() {
   const todayKey = getLocalDateKey();
+  const inboxQuery = useTasks({ variables: { status: 'inbox' } });
   const {
     data: strictInbox,
     isLoading: loadingInbox,
     refetch: refetchInbox,
     isRefetching: refetchingInbox,
-  } = useTasks({ variables: { status: 'inbox' } });
+  } = inboxQuery;
+  const dayTasksQuery = useTasks({ variables: { date: todayKey } });
   const {
     data: dayTasks,
     isLoading: loadingDay,
     refetch: refetchDayTasks,
     isRefetching: refetchingDayTasks,
-  } = useTasks({ variables: { date: todayKey } });
+  } = dayTasksQuery;
+  const blocksQuery = useTaskBlocks({ variables: { date: todayKey } });
   const {
     data: todayBlocks,
     isLoading: loadingBlocks,
     refetch: refetchBlocks,
     isRefetching: refetchingBlocks,
-  } = useTaskBlocks({ variables: { date: todayKey } });
+  } = blocksQuery;
 
   const tasks = React.useMemo(
     () =>
@@ -93,6 +97,7 @@ export function useQueueTasks() {
 
   const isLoading = loadingInbox || loadingDay || loadingBlocks;
   const isRefetching = refetchingInbox || refetchingDayTasks || refetchingBlocks;
+  const isBlockingLoading = shouldShowBlockingSpinnerAny([inboxQuery, dayTasksQuery, blocksQuery]);
 
   const refetch = React.useCallback(() => {
     return Promise.all([refetchInbox(), refetchDayTasks(), refetchBlocks()]);
@@ -102,6 +107,7 @@ export function useQueueTasks() {
     tasks,
     todayKey,
     isLoading,
+    isBlockingLoading,
     isRefetching,
     refetch,
   };

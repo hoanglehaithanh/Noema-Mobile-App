@@ -5,10 +5,12 @@ import type {
 } from '@/types';
 
 import { createMutation, createQuery } from 'react-query-kit';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 
 export const useFocusSessions = createQuery<FocusSession[], void>({
   queryKey: ['focus_sessions'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async () => {
     const { data, error } = await supabase
       .from('focus_sessions')
@@ -22,6 +24,7 @@ export const useFocusSessions = createQuery<FocusSession[], void>({
 
 export const useFocusSession = createQuery<FocusSession, { id: string }>({
   queryKey: ['focus_sessions', 'detail'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     const { data, error } = await supabase
       .from('focus_sessions')

@@ -22,6 +22,7 @@ import { useCaptures } from '@/features/capture/api';
 import { useTasks } from '@/features/tasks/api';
 import { useCreateTaskBlock, useDeleteTaskBlock, useTaskBlocks } from '@/features/tasks/blocks-api';
 import { hrefTask } from '@/lib/href-task';
+import { shouldShowBlockingQuerySpinner } from '@/lib/query-loading';
 import { useDailyCapacity } from './api';
 import { buildCapacityBuckets, buildTimelineItems, findNextOpenSlot, getDoNextBlock, getLocalDateKey, getUnscheduledTasks } from './planning';
 
@@ -681,7 +682,7 @@ export function HomeScreen() {
       capturesCount={captures?.length ?? 0}
       capacityBuckets={capacityBuckets}
       timelineItems={timelineItems}
-      calendarLoading={calendarQuery.isLoading}
+      calendarLoading={shouldShowBlockingQuerySpinner(calendarQuery)}
       calendarError={calendarQuery.isError}
       onDeleteBlock={handleDeleteBlock}
       unscheduledTasks={unscheduledTasks}

@@ -1,10 +1,12 @@
 import type { Capture, CreateCaptureInput } from '@/types';
 
 import { createMutation, createQuery } from 'react-query-kit';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 
 export const useCaptures = createQuery<Capture[], { processed?: boolean } | void>({
   queryKey: ['captures'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     let query = supabase
       .from('captures')

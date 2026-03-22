@@ -1,9 +1,27 @@
 import type { CalendarEvent } from '@/features/calendar/mappers';
 import type { DailyCapacity, Task, TaskBlock, TaskType } from '@/types';
 
-export type TimelineItem =
-  | { id: string; kind: 'calendar'; title: string; start: string; end: string; allDay: boolean }
-  | { id: string; kind: 'task_block'; title: string; start: string; end: string; status: TaskBlock['status']; type: TaskType };
+type TimelineCalendarItem = {
+  id: string;
+  kind: 'calendar';
+  title: string;
+  start: string;
+  end: string;
+  allDay: boolean;
+};
+
+type TimelineTaskBlockItem = {
+  id: string;
+  kind: 'task_block';
+  title: string;
+  start: string;
+  end: string;
+  status: TaskBlock['status'];
+  type: TaskType;
+  task_id: string;
+};
+
+export type TimelineItem = TimelineCalendarItem | TimelineTaskBlockItem;
 
 export type CapacityBucket = {
   type: TaskType;
@@ -45,6 +63,7 @@ export function buildTimelineItems(
       end: block.ends_at,
       status: block.status,
       type: block.type_snapshot,
+      task_id: block.task_id,
     })),
   ].sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime());
 }
@@ -120,8 +139,8 @@ export function getUnscheduledTasks(
     });
 }
 
-function overlaps(start: Date, end: Date, busyStart: Date, busyEnd: Date) {
-  return start < busyEnd && end > busyStart;
+function overlaps(a: { start: Date; end: Date; busyStart: Date; busyEnd: Date }) {
+  return a.start < a.busyEnd && a.end > a.busyStart;
 }
 
 export function findNextOpenSlot({
@@ -161,7 +180,14 @@ export function findNextOpenSlot({
     if (candidateEnd > dayEnd)
       return null;
 
-    const blocked = busySlots.some(slot => overlaps(cursor, candidateEnd, slot.start, slot.end));
+    const blocked = busySlots.some(slot =>
+      overlaps({
+        start: cursor,
+        end: candidateEnd,
+        busyStart: slot.start,
+        busyEnd: slot.end,
+      }),
+    );
     if (!blocked)
       return cursor;
   }

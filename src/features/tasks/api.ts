@@ -1,10 +1,12 @@
 import type { CreateTaskInput, Task, UpdateTaskInput } from '@/types';
 
 import { createMutation, createQuery } from 'react-query-kit';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 
 export const useTasks = createQuery<Task[], { status?: string; date?: string } | void>({
   queryKey: ['tasks'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     let query = supabase
       .from('tasks')
@@ -30,6 +32,7 @@ export const useTasks = createQuery<Task[], { status?: string; date?: string } |
 
 export const useTask = createQuery<Task, { id: string }>({
   queryKey: ['tasks', 'detail'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     const { data, error } = await supabase
       .from('tasks')

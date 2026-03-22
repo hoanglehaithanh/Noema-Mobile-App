@@ -3,6 +3,7 @@ import type { CreateTaskBlockInput, TaskBlock, TaskType, UpdateTaskBlockInput } 
 import { createMutation, createQuery } from 'react-query-kit';
 import { createCalendarTaskEvent, deleteCalendarTaskEvent, updateCalendarTaskEvent } from '@/features/calendar/api';
 import { getLocalDateKey } from '@/features/home/planning';
+import { queryDiskCacheMiddleware } from '@/lib/query-disk-cache-middleware';
 import { supabase } from '@/lib/supabase';
 
 function addMinutes(value: string, minutes: number) {
@@ -53,6 +54,7 @@ async function recalculateDailyCapacity(userId: string, date: string) {
 
 export const useTaskBlocks = createQuery<TaskBlock[], { date: string }>({
   queryKey: ['task_blocks'],
+  use: [queryDiskCacheMiddleware],
   fetcher: async (variables) => {
     const start = `${variables.date}T00:00:00`;
     const end = `${variables.date}T23:59:59.999`;
